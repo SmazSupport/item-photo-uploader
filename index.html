@@ -1,32 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Item Photo Uploader</title>
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-  </head>
-  <body>
-    <h1>📷 Item Photo Uploader</h1>
+<html>
+<head>
+  <title>Item Photo Uploader</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="auth">
+    <button id="login">Login with Google</button>
+  </div>
 
-    <div id="auth">
-      <button id="login">Login with Google</button>
-      <p id="user-info"></p>
-    </div>
+  <div id="main" style="display:none;">
+    <input type="text" id="item-name" placeholder="Enter Item Name (e.g., 11PG)" />
+    <button id="search-btn">🔍 Search / Create Folder</button>
 
-    <div id="main" style="display: none">
-      <input
-        type="text"
-        id="item-name"
-        placeholder="Enter Item Name (e.g., 11PG)"
-      />
-      <button id="take-photo">📸 Take Photo</button>
-      <div id="preview-grid"></div>
-    </div>
+    <div id="photo-count"></div>
+    <div id="preview-grid"></div>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
-  </body>
+    <button id="take-photo" class="sticky-button">📸 Take Photo</button>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
 </html>
