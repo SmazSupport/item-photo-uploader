@@ -26,7 +26,12 @@ function init() {
     const savedToken = sessionStorage.getItem("access_token");
     if (savedToken) {
       accessToken = savedToken;
-      onLoginSuccess();
+      try {
+        await gapi.client.drive.files.list({ pageSize: 1 }); // quick test
+        onLoginSuccess();
+      } catch (err) {
+        logout();
+      }
     }
   });
 
@@ -74,8 +79,7 @@ async function getOrCreateRootFolder() {
 
   const res = await gapi.client.drive.files.list({
     q: "mimeType='application/vnd.google-apps.folder' and name='Amazon Product Photos' and trashed=false",
-    fields: "files(id, createdTime)",
-    orderBy: "createdTime",
+    fields: "files(id)",
   });
 
   if (res.result.files.length > 0) {
@@ -106,14 +110,57 @@ async function loadFolderList() {
 
   for (const folder of res.result.files) {
     const count = await getPhotoCount(folder.id);
+
     const div = document.createElement("div");
     div.className = "folder-item";
-    div.textContent = `${folder.name} (${count} photo${count !== 1 ? "s" : ""})`;
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "folder-name";
+    nameDiv.textContent = folder.name;
+    div.appendChild(nameDiv);
+
+    const countDiv = document.createElement("div");
+    countDiv.className = "folder-count";
+    countDiv.textContent = `${count} photo${count !== 1 ? "s" : ""}`;
+    div.appendChild(countDiv);
+
+    const actions = document.createElement("div");
+    actions.className = "folder-actions";
+
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "✏️";
+    renameBtn.title = "Rename";
+    renameBtn.onclick = (e) => {
+      e.stopPropagation();
+      const newName = prompt("Enter new folder name:", folder.name);
+      if (newName && newName !== folder.name) {
+        gapi.client.drive.files.update({
+          fileId: folder.id,
+          resource: { name: newName },
+        }).then(() => loadFolderList());
+      }
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.title = "Delete folder";
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete folder "${folder.name}" and all its photos?`)) {
+        gapi.client.drive.files.delete({ fileId: folder.id }).then(() => loadFolderList());
+      }
+    };
+
+    actions.appendChild(renameBtn);
+    actions.appendChild(deleteBtn);
+    div.appendChild(actions);
+
     div.onclick = () => {
       currentSKU = folder.name;
       currentFolderId = folder.id;
       showFolderView(currentSKU, currentFolderId);
     };
+
     folderList.appendChild(div);
   }
 }
@@ -194,8 +241,6 @@ async function deletePhoto(fileId, folderId) {
   loadFolderList();
 }
 
-// --------- PHOTO CAPTURE ---------
-
 function triggerPhotoCapture() {
   const input = document.createElement("input");
   input.type = "file";
@@ -205,6 +250,12 @@ function triggerPhotoCapture() {
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file || !currentFolderId || !currentSKU) return;
+
+    const grid = document.getElementById("preview-grid");
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "uploading-placeholder";
+    grid.appendChild(placeholder);
 
     const fileName = await getNextPhotoName(currentFolderId, currentSKU);
     const metadata = {
@@ -245,3 +296,4 @@ async function getNextPhotoName(folderId, baseName) {
 }
 
 init();
+
