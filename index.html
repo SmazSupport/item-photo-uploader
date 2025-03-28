@@ -1,27 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Item Photo Uploader</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amazon Product Photos Uploader</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Load Google APIs -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <!-- Login Screen -->
   <div id="auth">
     <button id="login">Login with Google</button>
   </div>
 
-  <div id="main" style="display:none;">
-    <input type="text" id="item-name" placeholder="Enter Item Name (e.g., 11PG)" />
-    <button id="search-btn">🔍 Search / Create Folder</button>
-
-    <div id="photo-count"></div>
-    <div id="preview-grid"></div>
-
-    <button id="take-photo" class="sticky-button">📸 Take Photo</button>
+  <!-- Home Screen: Search + Folder List -->
+  <div id="home" style="display:none;">
+    <h2>Product Photo Uploader</h2>
+    <input type="text" id="sku-input" placeholder="Enter Product SKU (e.g., 11PG)" />
+    <button id="search-btn">Search / Create Folder</button>
+    <h3>Your Folders:</h3>
+    <div id="folder-list"></div>
   </div>
 
+  <!-- Folder View: Show folder name, back button, and thumbnail grid -->
+  <div id="folderView" style="display:none;">
+    <div class="folder-header">
+      <button id="back-btn">← Back</button>
+      <h2 id="folder-name-label"></h2>
+      <div id="photo-count"></div>
+    </div>
+    <div id="preview-grid"></div>
+  </div>
+
+  <!-- Include configuration and main script -->
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
