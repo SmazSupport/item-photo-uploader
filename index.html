@@ -3,46 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Amazon Product Photos Uploader</title>
+  <title>Amazon Product Photo Uploader</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <!-- Login -->
+
+  <!-- Login Screen -->
   <div id="auth">
-    <button id="login">Login with Google</button>
+    <h1>📸 Amazon Product Photo Uploader</h1>
+    <p>Quickly upload and manage product photos directly into your Google Drive from your phone.</p>
+    <button id="login" class="primary">Login with Google</button>
   </div>
 
-  <!-- Home -->
+  <!-- Home Screen -->
   <div id="home" style="display:none;">
-    <h2>Product Photo Uploader</h2>
-    <input type="text" id="sku-input" placeholder="Enter Product SKU (e.g., 11PG)" />
-    <button id="search-btn">Search / Create Folder</button>
-    <h3>Your Folders:</h3>
+    <div class="top-bar">
+      <h2>Search or Select a Product Folder</h2>
+      <button id="logout" class="secondary">Logout</button>
+    </div>
+    <input type="text" id="sku-input" placeholder="Enter SKU (e.g. 11PG)" />
+    <button id="search-btn" class="primary">Search / Create</button>
+
+    <h3>Existing Folders:</h3>
     <div id="folder-list"></div>
   </div>
 
   <!-- Folder View -->
   <div id="folderView" style="display:none;">
     <div class="folder-header">
-      <button id="back-btn">← Back</button>
-      <h2 id="folder-name-label"></h2>
-      <div id="photo-count"></div>
+      <button id="back-btn" class="secondary">← Back</button>
+      <div>
+        <h2 id="folder-name-label"></h2>
+        <div id="photo-count"></div>
+      </div>
+      <button id="logout2" class="secondary">Logout</button>
     </div>
     <div id="preview-grid"></div>
-  </div>
-
-  <!-- Camera Modal -->
-  <div id="camera-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <img id="camera-preview" />
-      <div class="modal-buttons">
-        <button id="accept-add">✅ Accept & Add Another</button>
-        <button id="accept-exit">✅ Accept & Exit</button>
-        <button id="cancel-photo">❌ Cancel</button>
-      </div>
-    </div>
   </div>
 
   <script src="config.js"></script>
