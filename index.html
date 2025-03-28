@@ -10,27 +10,32 @@
 </head>
 <body>
 
-  <!-- Login Screen -->
+  <!-- LOGIN SCREEN -->
   <div id="auth">
     <h1>📸 Amazon Product Photo Uploader</h1>
-    <p>Quickly upload and manage product photos directly into your Google Drive from your phone.</p>
+    <p>Quickly upload and manage product photos directly in your Google Drive.</p>
     <button id="login" class="primary">Login with Google</button>
   </div>
 
-  <!-- Home Screen -->
+  <!-- HOME SCREEN -->
   <div id="home" style="display:none;">
     <div class="top-bar">
-      <h2>Search or Select a Product Folder</h2>
+      <h2>📁 Product Photo Folders</h2>
       <button id="logout" class="secondary">Logout</button>
     </div>
-    <input type="text" id="sku-input" placeholder="Enter SKU (e.g. 11PG)" />
-    <button id="search-btn" class="primary">Search / Create</button>
 
-    <h3>Existing Folders:</h3>
-    <div id="folder-list"></div>
+    <div class="search-bar">
+      <input type="text" id="sku-input" placeholder="Enter SKU (e.g. 11PG)" />
+      <button id="search-btn" class="primary">Search / Create</button>
+    </div>
+
+    <div id="folder-controls">
+      <h3>All Folders:</h3>
+      <div id="folder-list"></div>
+    </div>
   </div>
 
-  <!-- Folder View -->
+  <!-- FOLDER VIEW -->
   <div id="folderView" style="display:none;">
     <div class="folder-header">
       <button id="back-btn" class="secondary">← Back</button>
@@ -40,10 +45,13 @@
       </div>
       <button id="logout2" class="secondary">Logout</button>
     </div>
+
     <div id="preview-grid"></div>
+    <div id="upload-spinner" style="display:none;">Uploading...</div>
   </div>
 
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
