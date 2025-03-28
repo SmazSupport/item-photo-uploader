@@ -1,13 +1,11 @@
-// Global variables and scope
 let tokenClient;
 let accessToken = null;
-let rootFolderId = null;      // Amazon Product Photos folder
-let currentFolderId = null;   // Current SKU folder
+let rootFolderId = null;
+let currentFolderId = null;
 let currentSKU = "";
 
 const SCOPES = "https://www.googleapis.com/auth/drive.file";
 
-// Initialize the app
 function init() {
   gapi.load("client", async () => {
     await gapi.client.init({
@@ -25,7 +23,6 @@ function init() {
       },
     });
 
-    // Attempt silent login if token exists
     const savedToken = sessionStorage.getItem("access_token");
     if (savedToken) {
       accessToken = savedToken;
@@ -33,50 +30,50 @@ function init() {
     }
   });
 
-  // Login button
   document.getElementById("login").onclick = () => {
     tokenClient.requestAccessToken({ prompt: "consent" });
   };
 
-  // Search button on Home Screen
   document.getElementById("search-btn").onclick = async () => {
     const sku = document.getElementById("sku-input").value.trim();
-    if (!sku) {
-      alert("Please enter a product SKU.");
-      return;
-    }
+    if (!sku) return alert("Enter a SKU.");
     currentSKU = sku;
-    // Check if folder exists; if not, prompt to create it
     currentFolderId = await getOrCreateSKUFolder(sku);
-    // Switch to Folder View
-    showFolderView(sku, currentFolderId);
+    showFolderView(currentSKU, currentFolderId);
   };
 
-  // Back button in Folder View
   document.getElementById("back-btn").onclick = () => {
     document.getElementById("folderView").style.display = "none";
     document.getElementById("home").style.display = "block";
-    // Optionally, refresh folder list
     loadFolderList();
   };
+
+  // Camera modal buttons
+  document.getElementById("accept-add").onclick = () => handlePhotoAccept(true);
+  document.getElementById("accept-exit").onclick = () => handlePhotoAccept(false);
+  document.getElementById("cancel-photo").onclick = () => closeModal();
 }
 
-// Called after successful login
 function onLoginSuccess() {
   document.getElementById("auth").style.display = "none";
   document.getElementById("home").style.display = "block";
-  getOrCreateRootFolder();
-  loadFolderList();
+  getOrCreateRootFolder().then(loadFolderList);
 }
 
-// Create or retrieve the root folder "Amazon Product Photos"
 async function getOrCreateRootFolder() {
+  const cached = sessionStorage.getItem("rootFolderId");
+  if (cached) {
+    rootFolderId = cached;
+    return;
+  }
+
   const res = await gapi.client.drive.files.list({
     q: "mimeType='application/vnd.google-apps.folder' and name='Amazon Product Photos' and trashed=false",
-    fields: "files(id, name)",
+    fields: "files(id, createdTime)",
+    orderBy: "createdTime",
   });
 
-  if (res.result.files && res.result.files.length > 0) {
+  if (res.result.files.length > 0) {
     rootFolderId = res.result.files[0].id;
   } else {
     const createRes = await gapi.client.drive.files.create({
@@ -88,168 +85,189 @@ async function getOrCreateRootFolder() {
     });
     rootFolderId = createRes.result.id;
   }
+
+  sessionStorage.setItem("rootFolderId", rootFolderId);
 }
 
-// Load list of SKU folders (child folders of root) on Home Screen
 async function loadFolderList() {
-  const folderListDiv = document.getElementById("folder-list");
-  folderListDiv.innerHTML = "";
-  if (!rootFolderId) {
-    await getOrCreateRootFolder();
-  }
+  await getOrCreateRootFolder();
+  const folderList = document.getElementById("folder-list");
+  folderList.innerHTML = "";
+
   const res = await gapi.client.drive.files.list({
     q: `'${rootFolderId}' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'`,
     fields: "files(id, name)",
   });
-  const folders = res.result.files || [];
-  folders.forEach(async (folder) => {
-    // Get photo count for each folder
+
+  for (const folder of res.result.files) {
     const count = await getPhotoCount(folder.id);
     const div = document.createElement("div");
     div.className = "folder-item";
     div.textContent = `${folder.name} (${count} photo${count !== 1 ? "s" : ""})`;
-    // Click to open folder view
     div.onclick = () => {
       currentSKU = folder.name;
       currentFolderId = folder.id;
-      showFolderView(folder.name, folder.id);
+      showFolderView(currentSKU, currentFolderId);
     };
-    folderListDiv.appendChild(div);
-  });
+    folderList.appendChild(div);
+  }
 }
 
-// Get photo count in a folder
 async function getPhotoCount(folderId) {
   const res = await gapi.client.drive.files.list({
     q: `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`,
     fields: "files(id)",
   });
-  return res.result.files ? res.result.files.length : 0;
+  return res.result.files.length;
 }
 
-// Create or get the folder for a given SKU inside the root folder
 async function getOrCreateSKUFolder(sku) {
+  await getOrCreateRootFolder();
   const res = await gapi.client.drive.files.list({
     q: `mimeType='application/vnd.google-apps.folder' and name='${sku}' and '${rootFolderId}' in parents and trashed=false`,
-    fields: "files(id, name)",
+    fields: "files(id)",
   });
-  if (res.result.files && res.result.files.length > 0) {
+
+  if (res.result.files.length > 0) {
     return res.result.files[0].id;
   } else {
-    if (confirm(`Folder for SKU "${sku}" does not exist. Create it?`)) {
-      const createRes = await gapi.client.drive.files.create({
-        resource: {
-          name: sku,
-          mimeType: "application/vnd.google-apps.folder",
-          parents: [rootFolderId],
-        },
-        fields: "id",
-      });
-      return createRes.result.id;
-    } else {
-      return null;
-    }
+    const createRes = await gapi.client.drive.files.create({
+      resource: {
+        name: sku,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [rootFolderId],
+      },
+      fields: "id",
+    });
+    return createRes.result.id;
   }
 }
 
-// Switch to Folder View: display folder name, load images
-async function showFolderView(sku, folderId) {
-  if (!folderId) return;
+function showFolderView(sku, folderId) {
   document.getElementById("home").style.display = "none";
   document.getElementById("folderView").style.display = "block";
   document.getElementById("folder-name-label").textContent = sku;
   loadFolderImages(folderId);
 }
 
-// Load images from the given folder and display thumbnails in Folder View
 async function loadFolderImages(folderId) {
   const grid = document.getElementById("preview-grid");
   const countElem = document.getElementById("photo-count");
   grid.innerHTML = "";
+
   const res = await gapi.client.drive.files.list({
     q: `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`,
     fields: "files(id, name)",
   });
-  const files = res.result.files || [];
+
+  const files = res.result.files;
   countElem.textContent = `${files.length} photo${files.length !== 1 ? "s" : ""} in this folder`;
-  
-  // Add the "Add Photos" tile as the first grid element
+
   const addTile = document.createElement("div");
   addTile.className = "add-photos";
-  addTile.innerHTML = "+";
-  addTile.onclick = () => {
-    // For Phase 1, we’ll simply trigger a file input to simulate upload.
-    uploadPhotos(folderId, currentSKU);
-  };
+  addTile.textContent = "+";
+  addTile.onclick = () => triggerPhotoCapture();
   grid.appendChild(addTile);
-  
-  // Loop through files and create thumbnail images
-  files.forEach((file) => {
+
+  for (const file of files) {
     const img = document.createElement("img");
-    // Use Drive's export URL for viewing images
     img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
     img.alt = file.name;
-    // (Delete functionality will be added in Phase 2)
+    img.title = "Tap to delete";
+    img.onclick = () => {
+      if (confirm(`Delete ${file.name}?`)) {
+        deletePhoto(file.id, folderId);
+      }
+    };
     grid.appendChild(img);
-  });
+  }
 }
 
-// Dummy function to simulate photo upload (Phase 2 will improve this)
-function uploadPhotos(folderId, sku) {
-  // Create a file input to let the user select one or multiple images
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*";
-  fileInput.multiple = true;
-  
-  fileInput.onchange = async (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    for (const file of files) {
-      const fileName = await getNextPhotoName(folderId, sku);
-      const metadata = {
-        name: fileName,
-        parents: [folderId],
-        mimeType: file.type,
-      };
-      
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", file);
-      
-      await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: form,
-      });
-    }
-    // After uploads, refresh the folder view
-    loadFolderImages(folderId);
-    // Also refresh the home screen folder list (to update photo counts)
-    loadFolderList();
+async function deletePhoto(fileId, folderId) {
+  await gapi.client.drive.files.delete({ fileId });
+  loadFolderImages(folderId);
+  loadFolderList();
+}
+
+// ---------- PHOTO CAPTURE WORKFLOW ----------
+
+function triggerPhotoCapture() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.capture = "environment";
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = document.getElementById("camera-preview");
+      img.src = reader.result;
+      img.dataset.fileName = file.name;
+      img.dataset.fileBlob = reader.result;
+      img.dataset.originalFile = URL.createObjectURL(file);
+      img.dataset.actualFile = file;
+      showModal();
+    };
+    reader.readAsDataURL(file);
   };
-  fileInput.click();
+
+  input.click();
 }
 
-// Generate the next file name based on existing files in the folder
+function showModal() {
+  document.getElementById("camera-modal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("camera-modal").style.display = "none";
+  document.getElementById("camera-preview").src = "";
+}
+
+async function handlePhotoAccept(addAnother) {
+  const img = document.getElementById("camera-preview");
+  const file = img.dataset.actualFile;
+  if (!file || !currentFolderId || !currentSKU) return;
+
+  const fileName = await getNextPhotoName(currentFolderId, currentSKU);
+  const metadata = {
+    name: fileName,
+    parents: [currentFolderId],
+    mimeType: file.type,
+  };
+
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", file);
+
+  await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: form,
+  });
+
+  closeModal();
+  await loadFolderImages(currentFolderId);
+  await loadFolderList();
+
+  if (addAnother) {
+    triggerPhotoCapture();
+  }
+}
+
 async function getNextPhotoName(folderId, baseName) {
   const res = await gapi.client.drive.files.list({
     q: `'${folderId}' in parents and trashed=false`,
     fields: "files(name)",
   });
-  const names = (res.result.files || []).map(f => f.name);
-  const numbers = names
-    .map(name => {
-      const num = name.replace(baseName, "").replace(/\D/g, "");
-      return parseInt(num, 10);
-    })
+
+  const numbers = (res.result.files || [])
+    .map(f => parseInt(f.name.replace(baseName, "").replace(/\D/g, ""), 10))
     .filter(n => !isNaN(n));
-  
-  const nextNum = (Math.max(0, ...numbers) + 1).toString().padStart(4, "0");
-  return `${baseName}${nextNum}.jpg`;
+
+  const next = (Math.max(0, ...numbers) + 1).toString().padStart(4, "0");
+  return `${baseName}${next}.jpg`;
 }
 
 init();
