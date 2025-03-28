@@ -27,7 +27,7 @@ function init() {
     if (savedToken) {
       accessToken = savedToken;
       try {
-        await gapi.client.drive.files.list({ pageSize: 1 }); // quick test
+        await gapi.client.drive.files.list({ pageSize: 1 });
         onLoginSuccess();
       } catch (err) {
         logout();
@@ -41,6 +41,8 @@ function init() {
 
   document.getElementById("logout").onclick = logout;
   document.getElementById("logout2").onclick = logout;
+  document.getElementById("dark-toggle").onclick = toggleDarkMode;
+  document.getElementById("download-all").onclick = downloadAllPhotos;
 
   document.getElementById("search-btn").onclick = async () => {
     const sku = document.getElementById("sku-input").value.trim();
@@ -55,6 +57,16 @@ function init() {
     document.getElementById("home").style.display = "block";
     loadFolderList();
   };
+
+  // Apply saved dark mode
+  if (localStorage.getItem("darkMode") === "true") {
+    document.body.classList.add("dark-mode");
+  }
+}
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
 }
 
 function logout() {
@@ -110,9 +122,17 @@ async function loadFolderList() {
 
   for (const folder of res.result.files) {
     const count = await getPhotoCount(folder.id);
+    const thumbnailLink = await getLastPhotoThumbnail(folder.id);
 
     const div = document.createElement("div");
     div.className = "folder-item";
+
+    if (thumbnailLink) {
+      const thumb = document.createElement("img");
+      thumb.className = "folder-thumbnail";
+      thumb.src = thumbnailLink;
+      div.appendChild(thumb);
+    }
 
     const nameDiv = document.createElement("div");
     nameDiv.className = "folder-name";
@@ -163,6 +183,18 @@ async function loadFolderList() {
 
     folderList.appendChild(div);
   }
+}
+
+async function getLastPhotoThumbnail(folderId) {
+  const res = await gapi.client.drive.files.list({
+    q: `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`,
+    orderBy: "createdTime desc",
+    fields: "files(id, thumbnailLink)",
+    pageSize: 1,
+  });
+
+  const photo = res.result.files[0];
+  return photo ? (photo.thumbnailLink || `https://drive.google.com/uc?export=view&id=${photo.id}`) : null;
 }
 
 async function getPhotoCount(folderId) {
@@ -295,5 +327,23 @@ async function getNextPhotoName(folderId, baseName) {
   return `${baseName}${next}.jpg`;
 }
 
-init();
+async function downloadAllPhotos() {
+  if (!currentFolderId) return;
 
+  const res = await gapi.client.drive.files.list({
+    q: `'${currentFolderId}' in parents and trashed=false and mimeType contains 'image/'`,
+    fields: "files(id, name)",
+  });
+
+  for (const file of res.result.files) {
+    const link = document.createElement("a");
+    link.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
+    link.download = file.name;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+init();
