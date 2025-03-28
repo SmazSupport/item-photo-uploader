@@ -1,63 +1,80 @@
 body {
-  font-family: sans-serif;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f6f8fa;
+  margin: 0;
   padding: 20px;
+  color: #333;
   max-width: 600px;
   margin: auto;
-  background: #f8f8f8;
-  color: #333;
+}
+
+h1, h2, h3 {
+  margin-top: 0;
 }
 
 input, button {
-  margin: 10px 0;
-  padding: 12px;
   width: 100%;
+  padding: 12px;
+  margin: 10px 0;
   font-size: 1rem;
   box-sizing: border-box;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-button {
+.primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.secondary {
+  background-color: #ddd;
+  border: none;
+}
+
+button:hover {
+  opacity: 0.9;
   cursor: pointer;
 }
 
-h2, h3 {
-  margin-top: 20px;
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.folder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 #folder-list, #preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
-  margin-top: 20px;
 }
 
 .folder-item {
-  background: #eee;
+  background: #e9ecef;
   padding: 10px;
   text-align: center;
   border-radius: 8px;
 }
 
 .folder-item:hover {
-  background: #ddd;
-}
-
-.folder-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-#back-btn {
-  padding: 8px;
-  font-size: 1rem;
+  background: #dcdfe4;
 }
 
 #preview-grid img {
   width: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  border-radius: 6px;
+  height: 100px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 #preview-grid img:hover {
@@ -70,43 +87,13 @@ h2, h3 {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: #666;
-  border-radius: 8px;
+  border-radius: 6px;
   height: 100px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+  position: sticky;
+  bottom: 10px;
 }
 
-/* Modal for camera options */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  max-width: 90%;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.modal-content img {
-  width: 100%;
-  max-height: 400px;
-  object-fit: contain;
-  margin-bottom: 10px;
-}
-
-.modal-buttons button {
-  margin: 5px 0;
-  width: 100%;
-}
 
