@@ -5,17 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Amazon Product Photos Uploader</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Load Google APIs -->
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <!-- Login Screen -->
+  <!-- Login -->
   <div id="auth">
     <button id="login">Login with Google</button>
   </div>
 
-  <!-- Home Screen: Search + Folder List -->
+  <!-- Home -->
   <div id="home" style="display:none;">
     <h2>Product Photo Uploader</h2>
     <input type="text" id="sku-input" placeholder="Enter Product SKU (e.g., 11PG)" />
@@ -24,7 +23,7 @@
     <div id="folder-list"></div>
   </div>
 
-  <!-- Folder View: Show folder name, back button, and thumbnail grid -->
+  <!-- Folder View -->
   <div id="folderView" style="display:none;">
     <div class="folder-header">
       <button id="back-btn">← Back</button>
@@ -34,9 +33,19 @@
     <div id="preview-grid"></div>
   </div>
 
-  <!-- Include configuration and main script -->
+  <!-- Camera Modal -->
+  <div id="camera-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <img id="camera-preview" />
+      <div class="modal-buttons">
+        <button id="accept-add">✅ Accept & Add Another</button>
+        <button id="accept-exit">✅ Accept & Exit</button>
+        <button id="cancel-photo">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
-
