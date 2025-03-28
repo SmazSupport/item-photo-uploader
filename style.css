@@ -4,40 +4,71 @@ body {
   max-width: 600px;
   margin: auto;
   background: #f8f8f8;
+  color: #333;
 }
-input,
-button {
+
+input, button {
   margin: 10px 0;
   padding: 12px;
   width: 100%;
   font-size: 1rem;
+  box-sizing: border-box;
 }
-#photo-count {
-  font-weight: bold;
-  margin: 10px 0;
+
+button {
+  cursor: pointer;
 }
-#preview-grid {
+
+h2, h3 {
+  margin-top: 20px;
+}
+
+#folder-list, #preview-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 80px;
+  margin-top: 20px;
 }
+
+.folder-item {
+  background: #eee;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.folder-item:hover {
+  background: #ddd;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#back-btn {
+  padding: 8px;
+  font-size: 1rem;
+}
+
 #preview-grid img {
   width: 100%;
   object-fit: cover;
   border-radius: 8px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
 }
-.sticky-button {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: #4caf50;
-  color: white;
-  font-size: 1.2rem;
-  padding: 16px;
-  border: none;
-  z-index: 100;
+
+/* Placeholder Add Photos tile styling */
+.add-photos {
+  background: #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  color: #666;
+  border-radius: 8px;
+  height: 100px;
 }
 
