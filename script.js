@@ -34,6 +34,9 @@ function init() {
     tokenClient.requestAccessToken({ prompt: "consent" });
   };
 
+  document.getElementById("logout").onclick = logout;
+  document.getElementById("logout2").onclick = logout;
+
   document.getElementById("search-btn").onclick = async () => {
     const sku = document.getElementById("sku-input").value.trim();
     if (!sku) return alert("Enter a SKU.");
@@ -47,11 +50,13 @@ function init() {
     document.getElementById("home").style.display = "block";
     loadFolderList();
   };
+}
 
-  // Camera modal buttons
-  document.getElementById("accept-add").onclick = () => handlePhotoAccept(true);
-  document.getElementById("accept-exit").onclick = () => handlePhotoAccept(false);
-  document.getElementById("cancel-photo").onclick = () => closeModal();
+function logout() {
+  accessToken = null;
+  sessionStorage.removeItem("access_token");
+  sessionStorage.removeItem("rootFolderId");
+  location.reload();
 }
 
 function onLoginSuccess() {
@@ -157,7 +162,7 @@ async function loadFolderImages(folderId) {
 
   const res = await gapi.client.drive.files.list({
     q: `'${folderId}' in parents and trashed=false and mimeType contains 'image/'`,
-    fields: "files(id, name)",
+    fields: "files(id, name, thumbnailLink)",
   });
 
   const files = res.result.files;
@@ -171,7 +176,7 @@ async function loadFolderImages(folderId) {
 
   for (const file of files) {
     const img = document.createElement("img");
-    img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
+    img.src = file.thumbnailLink || `https://drive.google.com/uc?export=view&id=${file.id}`;
     img.alt = file.name;
     img.title = "Tap to delete";
     img.onclick = () => {
@@ -189,7 +194,7 @@ async function deletePhoto(fileId, folderId) {
   loadFolderList();
 }
 
-// ---------- PHOTO CAPTURE WORKFLOW ----------
+// --------- PHOTO CAPTURE ---------
 
 function triggerPhotoCapture() {
   const input = document.createElement("input");
@@ -197,63 +202,32 @@ function triggerPhotoCapture() {
   input.accept = "image/*";
   input.capture = "environment";
 
-  input.onchange = (e) => {
+  input.onchange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = document.getElementById("camera-preview");
-      img.src = reader.result;
-      img.dataset.fileName = file.name;
-      img.dataset.fileBlob = reader.result;
-      img.dataset.originalFile = URL.createObjectURL(file);
-      img.dataset.actualFile = file;
-      showModal();
+    if (!file || !currentFolderId || !currentSKU) return;
+
+    const fileName = await getNextPhotoName(currentFolderId, currentSKU);
+    const metadata = {
+      name: fileName,
+      parents: [currentFolderId],
+      mimeType: file.type,
     };
-    reader.readAsDataURL(file);
+
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", file);
+
+    await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+
+    loadFolderImages(currentFolderId);
+    loadFolderList();
   };
 
   input.click();
-}
-
-function showModal() {
-  document.getElementById("camera-modal").style.display = "flex";
-}
-
-function closeModal() {
-  document.getElementById("camera-modal").style.display = "none";
-  document.getElementById("camera-preview").src = "";
-}
-
-async function handlePhotoAccept(addAnother) {
-  const img = document.getElementById("camera-preview");
-  const file = img.dataset.actualFile;
-  if (!file || !currentFolderId || !currentSKU) return;
-
-  const fileName = await getNextPhotoName(currentFolderId, currentSKU);
-  const metadata = {
-    name: fileName,
-    parents: [currentFolderId],
-    mimeType: file.type,
-  };
-
-  const form = new FormData();
-  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-  form.append("file", file);
-
-  await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: form,
-  });
-
-  closeModal();
-  await loadFolderImages(currentFolderId);
-  await loadFolderList();
-
-  if (addAnother) {
-    triggerPhotoCapture();
-  }
 }
 
 async function getNextPhotoName(folderId, baseName) {
@@ -271,5 +245,3 @@ async function getNextPhotoName(folderId, baseName) {
 }
 
 init();
-
-
